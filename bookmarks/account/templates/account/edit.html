@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block title %}Edit your account{% endblock %}
+
+{% block content %}
+    <h1>Edit your account</h1>
+    <p>You can edit your account using the following form:</p>
+    <form method="post" enctype="multipart/form-data">
+        {% comment %} {{ user_form.as_p }}
+        {{ profile_form.as_p }} {% endcomment %}
+        <input type="text" name="first_name">
+        <input type="text" name="last_name">
+        <input type="email" name="email">
+        <input type="date" name="date_of_birth">
+        <input type="file" name="image">
+        {% csrf_token %}
+        <p><input type="submit" value="Save changes"></p>
+    </form>
+{% endblock %}

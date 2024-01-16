@@ -3,6 +3,8 @@ from django.utils import timezone
 from django.contrib.auth.models import User, AbstractUser
 from django.urls import reverse
 
+from taggit.managers import TaggableManager
+
 
 class PublishedManager(models.Manager):
     def get_queryset(self):
@@ -27,6 +29,8 @@ class Post(models.Model):
                                on_delete=models.CASCADE,
                                related_name='blog_posts')
     
+    tags = TaggableManager()
+    
     objects = models.Manager() # менеджер, применяемый по умолчанию
     published = PublishedManager() # конкретно-прикладной менеджер
 
@@ -34,6 +38,7 @@ class Post(models.Model):
         ordering = ['-publish']
         indexes = [
             models.Index(fields=['-publish']),
+            models.Index(fields=['-body']),
         ]
     
     def __str__(self):
@@ -50,6 +55,9 @@ class Comment(models.Model):
     post = models.ForeignKey(Post,
                              on_delete=models.CASCADE,
                              related_name='comments')
+    parent = models.ForeignKey('self', related_name='childs', 
+                               on_delete=models.CASCADE, 
+                               blank=True,  null=True)
     name = models.CharField(max_length=80)
     email = models.EmailField()
     body = models.TextField()
