@@ -17,6 +17,9 @@ from .forms import (
 )
 from .models import Profile, Contact
 
+from actions.models import Action
+from actions.utils import create_action
+
 
 def user_login(request):
     if request.method == 'POST':
@@ -42,7 +45,13 @@ def user_login(request):
 
 @login_required
 def dashboard(request):
-    return render(request, 'account/dashboard.html', {'section': 'dashboard'})
+    actions = Action.objects.exclude(user=request.user)
+    following_ids = request.user.following.values_list('id', flat=True)
+    if following_ids:
+        actions = actions.filter(user_id__in=following_ids)
+    actions = actions.select_related('user', 'user__profile')[:10].prefetch_related('target')[:10]
+    # actions = actions[:10]
+    return render(request, 'account/dashboard.html', {'section': 'dashboard', 'actions': actions})
 
 
 # class CustomLoginView(LoginView):
@@ -56,6 +65,7 @@ def register(request):
             new_user.set_password(user_form.cleaned_data['password'])
             new_user.save()
             Profile.objects.create(user=new_user)
+            create_action(new_user, 'has created an account')
             messages.success(request, 'Your account has been successfully created. Now you can log in')
             return redirect('login')
     else:
@@ -109,6 +119,7 @@ def user_follow(request):
             user = User.objects.get(id=user_id)
             if action == 'follow':
                 Contact.objects.get_or_create(user_from=request.user, user_to=user)
+                create_action(request.user, 'is following', user)
             else:
                 Contact.objects.filter(user_from=request.user, user_to=user).delete()
             return JsonResponse({'status':'ok'})
